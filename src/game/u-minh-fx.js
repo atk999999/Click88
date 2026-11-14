@@ -1,0 +1,5 @@
+// Bounded PixelFX for U Minh Ma Bức: dark core with moving violet talons.
+const rgb=(r,g,b)=>(0xff000000|(b<<16)|(g<<8)|r)>>>0;
+const D=rgb(28,10,53),P=rgb(129,62,205),L=rgb(205,148,255),W=rgb(248,231,255);
+export const UMINH_ORB_FX={meta:{name:'u-minh-ma-cau',duration:3.2,loop:false,options:{seed:1}},draw(p,t){const f=Math.min(1,t/.1)*Math.min(1,(3.2-t)/.2),a=t*7;p.glow(0,0,34,P,.42*f);p.disc(0,0,23,D,.95*f);p.disc(0,0,13,P,.95*f);p.disc(0,0,5,W,.95*f);p.ring(0,0,25,2,L,.85*f);for(let i=0;i<6;i++){const q=a+i*Math.PI/3,x=Math.cos(q)*19,y=Math.sin(q)*19;p.line(x,y,Math.cos(q+.23)*37,Math.sin(q+.23)*37,L,.8*f);p.disc(Math.cos(q+.23)*37,Math.sin(q+.23)*37,2,W,.8*f);}}};
+export const UMINH_CHARGE_FX={meta:{name:'u-minh-tu-luc',duration:.65,loop:false,options:{seed:1}},draw(p,t){const u=Math.min(1,t/.65),f=Math.sin(Math.PI*u);p.glow(0,0,26,P,.3*f);p.ring(0,0,8+23*u,2,L,.85*f);for(let i=0;i<5;i++){const a=i*Math.PI*2/5-t*5;p.line(Math.cos(a)*30,Math.sin(a)*30,Math.cos(a+.3)*8,Math.sin(a+.3)*8,W,.85*f);}}};

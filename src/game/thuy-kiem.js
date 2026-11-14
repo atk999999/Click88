@@ -1,0 +1,23 @@
+// Thủy Kiếm · Tam Liên: three individually collidable water swords.
+import {game,camera,settings,player,clamp} from './state.js';
+import {drawJian} from './lang-tieu-fx.js';
+const P=window.PK_PIXELFX;
+const color=(r,g,b)=>(0xff000000|(b<<16)|(g<<8)|r)>>>0;
+const C={deep:color(7,52,90),blue:color(25,141,210),aqua:color(65,218,239),white:color(230,255,255)};
+export const THUY_KIEM_SCALE=1;
+export const THUY_KIEM_SPEC=Object.freeze({slot:4,code:'Digit4',kind:'water',name:'THỦY KIẾM',manaCost:60,castSeconds:.65,cooldownSeconds:26,slowSeconds:3,slowMultiplier:.35,swordDamages:[105,110,130],strikeGapSeconds:.14,projectileSpeed:800,projectileLife:1.8,projectileRadius:22,scale:1});
+export function createThuyKiemState(){return {phase:'ready',cast:0,cd:0,world:0,stage:0,hitCount:0,targetId:null,anchorX:0,anchorY:0,swords:[],fired:0,impacts:[]};}
+export function startThuyKiemSeal(state,targetPos){state.phase='seal';state.cast=0;state.stage=0;state.hitCount=0;state.swords=[];state.impacts=[];state.fired=0;state.anchorX=targetPos?.x??player.x+player.facing*260;state.anchorY=targetPos?.feetY??player.y;}
+export function launchWaterSword(state,index,target){const face=player.facing||1,x=player.x+face*35,y=player.y-70+(index-1)*15;const aimX=target?.x??x+face*850,aimY=target?.y??y;const base=Math.atan2(aimY-y,aimX-x),angle=base+(index-1)*.16;const sword={i:index,x,y,vx:Math.cos(angle)*THUY_KIEM_SPEC.projectileSpeed,vy:Math.sin(angle)*THUY_KIEM_SPEC.projectileSpeed,angle,age:0,land:false,live:true};state.swords.push(sword);state.fired++;return sword;}
+export function stepWaterSword(sword,dt,target){if(!sword.live)return;dt=Math.max(0,Math.min(dt,THUY_KIEM_SPEC.projectileLife-sword.age));const x=sword.x,y=sword.y;if(target){const desired=Math.atan2(target.y-y,target.x-x);let delta=Math.atan2(Math.sin(desired-sword.angle),Math.cos(desired-sword.angle));sword.angle+=clamp(delta,-2.5*dt,2.5*dt);}sword.vx=Math.cos(sword.angle)*THUY_KIEM_SPEC.projectileSpeed;sword.vy=Math.sin(sword.angle)*THUY_KIEM_SPEC.projectileSpeed;sword.x+=sword.vx*dt;sword.y+=sword.vy*dt;sword.age+=dt;return{x0:x,y0:y,x1:sword.x,y1:sword.y,expired:sword.age>=THUY_KIEM_SPEC.projectileLife-1e-9};}
+export function waterSwordImpact(state,sword,x,y){if(!sword.live)return;sword.live=false;sword.land=true;state.hitCount++;state.impacts.push({x,y,age:0});if(state.impacts.length>5)state.impacts.shift();}
+export function stepThuyKiemParticles(state,dt){state.world+=dt;for(const p of state.impacts)p.age+=dt;state.impacts=state.impacts.filter(p=>p.age<.55);}
+const W=180,H=120,frame=P.createFrame(W,H),canvas=document.createElement('canvas');canvas.width=W;canvas.height=H;const c=canvas.getContext('2d'),pixels=c.createImageData(W,H);
+function ellipse(p,x,y,rx,ry,t,col,a){let lx,ly;for(let i=0;i<=32;i++){const v=i*Math.PI*2/32+t,xx=x+Math.cos(v)*rx,yy=y+Math.sin(v)*ry;if(i)p.line(lx,ly,xx,yy,col,a);lx=xx;ly=yy;}}
+export function drawWaterSwordFx(p,t){p.glowLine(-70,0,48,0,10,C.blue,.3);for(let i=0;i<5;i++){const y=(i-2)*5;p.beam(-80-i*3,y,-28,y*.4,2,i%2?C.aqua:C.blue,.45);}drawJian(p,0,0,0,105,1,true);for(let i=0;i<6;i++){const x=-12-((t*70+i*23)%65),y=Math.sin(t*9+i*2)*12;p.disc(x,y,1.2+i%2,C.white,.75);}}
+function renderBuffer(t){P.clearFrame(frame);const p=P.painterFor(frame).place(W/2,H/2);drawWaterSwordFx(p,t);P.composite(frame,pixels.data,null,.85);c.putImageData(pixels,0,0);}
+export function renderThuyKiemWorld(state){const g=game.ctx;if(!g)return;const wx0=camera.x-game.viewW/2,wy0=camera.y-game.viewH/2;renderBuffer(state.world);g.save();g.imageSmoothingEnabled=false;
+ for(const s of state.swords){if(!s.live)continue;g.save();g.translate(s.x-wx0,s.y-wy0);g.rotate(s.angle);g.drawImage(canvas,-W/2,-H/2);g.restore();}
+ for(const a of state.impacts){const k=1-a.age/.55;P.clearFrame(frame);const p=P.painterFor(frame).place(W/2,H/2);p.glow(0,0,20+a.age*35,C.blue,.3*k);p.ring(0,0,5+a.age*45,2,C.aqua,.9*k);for(let i=0;i<9;i++){const q=i*Math.PI*2/9,r=8+a.age*60;p.beam(Math.cos(q)*r,Math.sin(q)*r,Math.cos(q)*(r-8*k),Math.sin(q)*(r-8*k),2,C.white,.8*k);}P.composite(frame,pixels.data,null,.85);c.putImageData(pixels,0,0);g.drawImage(canvas,a.x-wx0-W/2,a.y-wy0-H/2);}
+ if(state.phase==='seal'){P.clearFrame(frame);const p=P.painterFor(frame).place(W/2,H/2),q=clamp(state.cast/THUY_KIEM_SPEC.castSeconds,0,1);p.glow(0,0,20+q*18,C.blue,.4);ellipse(p,0,0,22+q*12,13+q*5,state.world*2,C.aqua,.9);for(let i=0;i<8;i++){const a=i*Math.PI/4-state.world*4;p.disc(Math.cos(a)*28,Math.sin(a)*16,2,C.white,.8);}P.composite(frame,pixels.data,null,.85);c.putImageData(pixels,0,0);g.drawImage(canvas,player.x+player.facing*24-wx0-W/2,player.y-68-wy0-H/2);}
+ g.restore();}

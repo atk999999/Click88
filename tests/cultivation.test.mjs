@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import { createCultivation, addCultivationExp, chooseCultivationBuff, restoreCultivationStats, applySkillDrain } from '../src/game/cultivation.js';
+const c=createCultivation(),p={maxHp:1200,hp:600,maxMana:250,mana:100};
+assert.equal(addCultivationExp(c,99),false);assert.equal(c.stage,0);
+assert.equal(addCultivationExp(c,1),true);assert.equal(c.stage,1);assert.equal(c.pending,true);
+assert.equal(addCultivationExp(c,100),false,'cannot earn another reward while choosing');
+assert.equal(chooseCultivationBuff(c,p,'drain'),true);assert.equal(chooseCultivationBuff(c,p,'drain'),false,'cannot choose twice');
+applySkillDrain(p,100);assert.equal(p.hp,606);assert.equal(p.mana,102);
+assert.equal(addCultivationExp(c,100),true);assert.equal(c.stage,2);
+assert.equal(chooseCultivationBuff(c,p,'vitality'),true);assert.equal(p.maxHp,1450);assert.equal(p.hp,856);
+assert.equal(addCultivationExp(c,100),false,'no advancement beyond Hậu kỳ');
+const afterRound={maxHp:1200,hp:1200,maxMana:250,mana:250};restoreCultivationStats(c,afterRound,true);
+assert.equal(afterRound.realm,'TRÚC CƠ · HẬU KỲ');assert.equal(afterRound.hp,1450);assert.equal(afterRound.lifeSteal,.06);assert.equal(afterRound.manaSteal,.02);
+const heal=createCultivation(),hp={maxHp:1000,hp:100,maxMana:300,mana:10};addCultivationExp(heal,100);chooseCultivationBuff(heal,hp,'recovery');assert.equal(hp.hp,450);assert.equal(hp.mana,115);assert.equal(hp.hpRegen,2);assert.equal(hp.manaRegen,2);
+console.log('PASS EXP thresholds, one choice per stage, drain, restoration and stage cap');
